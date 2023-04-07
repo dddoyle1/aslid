@@ -1,0 +1,5 @@
+/.pytest_cache
+/ASLID.egg-info
+**/__pycache__
+/logs
+data/*
