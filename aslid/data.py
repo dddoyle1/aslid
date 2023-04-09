@@ -14,22 +14,43 @@ import tensorflow.keras as keras
 import math
 
 
-def get_training_data_paths(train_spec, prediction_map_path, rootdir=".", limit=None):
+def get_training_data_paths(
+    train_spec, prediction_map_path, rootdir=".", limit=None, return_ids=False
+):
     with open(prediction_map_path, "r") as j:
         prediction_map = json.load(j)
 
     training_data_paths = []
     training_data_Y = []
+    training_data_sequence_ids = []
+    training_data_participant_ids = []
+    training_data_signs = []
+
     with open(train_spec, "r") as f:
         lines = f.readlines()[1:]  # skip header
     for line in lines[:limit]:
-        p, _, _, y = line.strip().split(",")
+        p, pid, sid, y = line.strip().split(",")
         training_data_paths.append(os.path.join(rootdir, p))
         training_data_Y.append(prediction_map[y])
+        training_data_participant_ids.append(int(pid))
+        training_data_sequence_ids.append(int(sid))
+        training_data_signs.append(y)
 
     training_data_Y = np.array(training_data_Y)
     training_data_paths = np.array(training_data_paths)
-    return training_data_paths, training_data_Y
+    #    training_data_participant_ids = np.array(training_data_participant_ids)
+    # training_data_sequence_ids = np.array(training_data_sequence_ids)
+
+    if return_ids:
+        return (
+            training_data_paths,
+            training_data_Y,
+            training_data_participant_ids,
+            training_data_sequence_ids,
+            training_data_signs,
+        )
+    else:
+        return training_data_paths, training_data_Y
 
 
 def load_relevant_data_subset(pq_path):

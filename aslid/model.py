@@ -23,6 +23,9 @@ ROWS_OFFSET_LEFT = ROWS_PER_FACE
 
 FRAMES = 30
 FEATURES = ROWS_PER_HAND * 2 * 3  # 2 hands * 3 coordinates
+INPUT_SHAPE = (FRAMES, FEATURES)
+N_CLASSES = 250
+SIGN_ID_OFFSET = 1000
 
 
 class IdentityTransformer(BaseEstimator, TransformerMixin):

@@ -4,6 +4,8 @@ from sklearn.base import BaseEstimator
 
 from .map_landmark_connections import get_landmark_connections
 
+import aslid.model
+
 
 def transformer_encoder(inputs, num_heads, ff_dim, dropout=0):
     # Normalization
@@ -27,26 +29,27 @@ def transformer_encoder(inputs, num_heads, ff_dim, dropout=0):
 
 
 def build_model(
-    input_shape,
-    n_classes,
-    num_heads,
     ff_dim,
+    num_transformer_heads,
     num_transformer_blocks,
     mlp_units,
     dropout=0,
     mlp_dropout=0,
 ):
-    inputs = keras.Input(shape=input_shape)
+    if not isinstance(mlp_units, list):
+        mlp_units = [mlp_units]
+
+    inputs = keras.Input(shape=aslid.model.INPUT_SHAPE)
     x = inputs
 
     for _ in range(num_transformer_blocks):
-        x = transformer_encoder(x, num_heads, ff_dim, dropout)
+        x = transformer_encoder(x, num_transformer_heads, ff_dim, dropout)
 
     x = layers.GlobalAveragePooling1D(data_format="channels_last")(x)
     for dim in mlp_units:
         x = layers.Dense(dim, activation="relu")(x)
         x = layers.Dropout(mlp_dropout)(x)
-    outputs = layers.Dense(n_classes, activation="softmax")(x)
+    outputs = layers.Dense(aslid.model.N_CLASSES, activation="softmax")(x)
     return keras.Model(inputs, outputs)
 
 
@@ -59,7 +62,6 @@ class TransformerNetwork(BaseEstimator):
         learning_rate_decay_rate=0.9,
         batch_size=10,
         epochs=100,
-        validation_split=0.2,
         callbacks=[],
         patience=10,
         **kwargs
