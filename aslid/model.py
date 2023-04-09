@@ -28,6 +28,32 @@ N_CLASSES = 250
 SIGN_ID_OFFSET = 1000
 
 
+class NormalizeTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        self.mean = None
+        self.sigma = None
+
+    @staticmethod
+    def repeat(stat, repeats, axis):
+        return np.repeat(np.expand_dims(stat, axis=axis), repeats, axis=axis)
+
+    def fit(self, X):
+        """Normalize each landmark coordinate independently
+
+        Args:
+            X (np.array)): (N, frames, landmarks, coordinates)
+
+        Returns:
+            (np.array)): (N, frames, landmarks, coordinates)
+        """
+        self.mean = self.repeat(np.mean(X, axis=1), repeats=X.shape[1], axis=1)
+        self.std = self.repeat(np.std(X, axis=1), repeats=X.shape[1], axis=1)
+        return self
+
+    def transform(self, X):
+        return (X - self.mean) / self.std
+
+
 class IdentityTransformer(BaseEstimator, TransformerMixin):
     def fit(self, input_array, y=None):
         return self
