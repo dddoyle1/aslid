@@ -22,6 +22,12 @@ from tqdm import tqdm
 from aslid.data import get_training_data_paths
 import aslid.model
 
+
+def merge_all(session, items):
+    for item in items:
+        session.merge(item)
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--recreate", action="store_true")
 args = parser.parse_args()
@@ -153,34 +159,25 @@ sequences = [
 commit_every = 50
 # write participants and sequence tables
 with Session(engine) as session:
-    session.add_all(participants)
-    session.add_all(signs)
-    session.add_all(sequences)
+    merge_all(session, participants)
+    merge_all(session, signs)
+    merge_all(session, sequences)
 
-    for i in tqdm(range(len(input_files))):
-        df = pd.read_parquet(input_files[i])
+    for i, (input_file, sequence) in tqdm(
+        enumerate(zip(input_files, sequences)), total=len(input_files)
+    ):
+        df = pd.read_parquet(input_file)
+
         session.add_all(
             df.apply(
                 LandmarkCoordinates,
-                participant_id=participant_ids[i],
-                sequence_id=sequence_ids[i],
+                participant_id=sequence.participant_id,
+                sequence_id=sequence.id,
                 axis=1,
             ).values
         )
+
         if i % commit_every == 0:
             session.commit()
 
-    # session.add_all(list(participants.values()))
     session.commit()
-
-# db.execute(create_participants_table)
-
-# create sequences table
-
-
-# df = pd.read_parquet(input_file)
-# df["participant_id"] = participant_id
-# df["sequence_id"] = sequence_id
-# # df = df.set_index("row_id")
-
-# df.to_sql(f"{participant_id}_{sequence_id}", con=db, if_exists="replace")
